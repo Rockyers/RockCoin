@@ -9,14 +9,22 @@ import java.util.ArrayList;
 public class Blockchain {
     private final ArrayList<Block> blockchain = new ArrayList<>();
 
-    public Blockchain addBlock(Block block, int difficulty) {
-        printlnf("&yAdding block " + (blockchain.indexOf(block) + 1) + "...");
+    public Blockchain addBlock(Block block) throws InterruptedException {
+        String addingText = StringUtils.color("&yAdding block " + (blockchain.size() + 1) + "...");
+        System.out.print(addingText);
         blockchain.add(block);
-        printlnf("&gAdded block " + (blockchain.indexOf(block) + 1));
-        printlnf("&yMining block " + (blockchain.indexOf(block) + 1) + "...");
-        block.mine(difficulty);
-        printlnf("&gMined block " + (blockchain.indexOf(block) + 1));
+        Thread.sleep(350);
+        StringUtils.backspace(addingText.length());
+        printlnf("&gAdded block " + (blockchain.indexOf(block) + 1) + "    ");
         return this;
+    }
+
+    public boolean allMined() {
+
+    }
+
+    public void mineBlocks(int difficulty) {
+
     }
 
     private void printlnf(String s) {

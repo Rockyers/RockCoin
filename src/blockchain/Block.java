@@ -5,10 +5,18 @@ import utils.StringUtils;
 import java.util.Date;
 
 public class Block {
+    public enum Status {
+        RAW,
+        MINING,
+        MINED
+    }
+
+    private Status status = Status.RAW;
     private String hash;
     private final String previousHash;
     private final String data;
     private final long timeStamp;
+    private String miningString;
     private int nonce;
 
     public Block(String data, String previousHash) {
@@ -46,21 +54,29 @@ public class Block {
 
     public void mineAsync(int difficulty) {
         new Thread(() -> {
+            status = Status.MINING;
             String target = new String(new char[difficulty]).replace('\0', '0');
-            boolean delete = false;
             while (!hash.substring(0, difficulty).equals(target)) {
                 nonce++;
                 hash = calculateHash();
-                print(getNonceString());
-                if (delete) StringUtils.backspace(getNonceString().length());
-                delete = true;
+                miningString = getNonceString();
             }
-            printf("&gNonce: " + nonce + "; " + hash);
+            StringUtils.backspace(getNonceString().length());
+            miningString = StringUtils.color("&gNonce: " + nonce + "; " + hash);
+            status = Status.MINED;
         }).start();
     }
 
     private String getNonceString() {
         return StringUtils.color("&yNonce: " + nonce + "; " + hash);
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public String getMiningString() {
+        return miningString;
     }
 
     private void printf(String str) {
