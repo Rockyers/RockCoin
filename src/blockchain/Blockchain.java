@@ -1,4 +1,8 @@
+package blockchain;
+
 import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import utils.StringUtils;
 
 import java.util.ArrayList;
 
@@ -6,9 +10,17 @@ public class Blockchain {
     private final ArrayList<Block> blockchain = new ArrayList<>();
 
     public Blockchain addBlock(Block block, int difficulty) {
+        printlnf("&yAdding block " + (blockchain.indexOf(block) + 1) + "...");
         blockchain.add(block);
+        printlnf("&gAdded block " + (blockchain.indexOf(block) + 1));
+        printlnf("&yMining block " + (blockchain.indexOf(block) + 1) + "...");
         block.mine(difficulty);
+        printlnf("&gMined block " + (blockchain.indexOf(block) + 1));
         return this;
+    }
+
+    private void printlnf(String s) {
+        System.out.println(StringUtils.color(s));
     }
 
     public Block getBlock(int index) {
@@ -21,6 +33,12 @@ public class Blockchain {
 
     public String getJson() {
         return new GsonBuilder().setPrettyPrinting().create().toJson(blockchain);
+    }
+
+    public Blockchain fromJson(String json) {
+        blockchain.clear();
+        blockchain.addAll(new GsonBuilder().create().fromJson(json, new TypeToken<ArrayList<Block>>(){}.getType()));
+        return this;
     }
 
     public boolean isValid(int difficulty) {
