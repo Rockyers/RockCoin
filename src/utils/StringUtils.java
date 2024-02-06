@@ -63,4 +63,12 @@ public class StringUtils {
     public static void backspace(int amount) {
         System.out.print("\b".repeat(Math.max(1, amount)));
     }
+
+    public static void hideCursor() {
+        System.out.print("\u001B[?25l");
+    }
+
+    public static void showCursor() {
+        System.out.print("\u001B[?25h");
+    }
 }

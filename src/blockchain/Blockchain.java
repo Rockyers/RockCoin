@@ -9,22 +9,36 @@ import java.util.ArrayList;
 public class Blockchain {
     private final ArrayList<Block> blockchain = new ArrayList<>();
 
-    public Blockchain addBlock(Block block) throws InterruptedException {
-        String addingText = StringUtils.color("&yAdding block " + (blockchain.size() + 1) + "...");
+    public Blockchain addBlock(Block block) {
+        String addingText = StringUtils.color("&yAdding block " + (blockchain.size()) + "...");
         System.out.print(addingText);
         blockchain.add(block);
-        Thread.sleep(350);
-        StringUtils.backspace(addingText.length());
-        printlnf("&gAdded block " + (blockchain.indexOf(block) + 1) + "    ");
+        System.out.print("\r");
+        printlnf("&gAdded block " + (blockchain.indexOf(block)) + "    ");
         return this;
     }
 
     public boolean allMined() {
+        return blockchain.stream().allMatch((block) -> block.getStatus() == Block.Status.MINED);
+    }
 
+    public String getProgressString() {
+        return null;
     }
 
     public void mineBlocks(int difficulty) {
+        for (Block b : blockchain)
+            b.mineAsync(difficulty);
 
+        while (!allMined()) {
+            System.out.print("Waiting...\r");
+        }
+
+        for (int i = 0; i < blockchain.size() - 1; i++) {
+            blockchain.get(i + 1).setPreviousHash(blockchain.get(i).simpleHash());
+        }
+
+        System.out.println("Done.      ");
     }
 
     private void printlnf(String s) {
@@ -54,20 +68,27 @@ public class Blockchain {
         Block previousBlock;
         String hashTarget = new String(new char[difficulty]).replace('\0', '0');
 
+        boolean pass = true;
         for (int i = 1; i < blockchain.size(); i++) {
             currentBlock = blockchain.get(i);
             previousBlock = blockchain.get(i - 1);
 
-            if (!currentBlock.hash().equals(currentBlock.calculateHash()))
-                return false;
+            if (!currentBlock.hash().equals(currentBlock.calculateHash())) {
+                printlnf("&rBlock " + i + " | Cached hash (" + currentBlock.hash() + ") does not match calculated hash (" + currentBlock.calculateHash() + ") (nonce: " + currentBlock.getNonce() + ")");
+                pass = false;
+            }
 
-            if (!previousBlock.hash().equals(currentBlock.previousHash()))
-                return false;
+            if (!previousBlock.simpleHash().equals(currentBlock.previousHash())) {
+                printlnf("&rBlock " + i + " | Hash of block " + (i - 1) + " (" + previousBlock.hash() + ") Does match previous hash " + "(" + currentBlock.previousHash() + ")");
+                pass = false;
+            }
 
-            if (!currentBlock.hash().substring(0, difficulty).equals(hashTarget))
-                return false;
+            if (!currentBlock.hash().substring(0, difficulty).equals(hashTarget)) {
+                printlnf("&rBlock " + i + " | Not mined");
+                pass = false;
+            }
         }
 
-        return true;
+        return pass;
     }
 }
