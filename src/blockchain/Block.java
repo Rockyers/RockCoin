@@ -21,11 +21,13 @@ public class Block {
     private final long timeStamp;
     private String miningString;
     private int nonce;
+    private long startTime;
+
     public Block(String data, String previousHash) {
         this.data = data;
         this.previousHash = previousHash;
         this.timeStamp = new Date().getTime();
-        hash = calculateHash();
+        hash = calculateHash(nonce);
         simpleHash = calculateSimpleHash();
     }
 
@@ -49,8 +51,8 @@ public class Block {
         this.previousHash = previousHash;
     }
 
-    public String calculateHash() {
-        return StringUtils.applySha256(previousHash + timeStamp + nonce + data);
+    public String calculateHash(int lNonce) {
+        return StringUtils.applySha256(previousHash + timeStamp + lNonce + data);
     }
 
     private String calculateSimpleHash() {
@@ -63,9 +65,9 @@ public class Block {
         boolean delete = false;
         while (!hash.substring(0, difficulty).equals(target)) {
             nonce++;
-            hash = calculateHash();
+            hash = calculateHash(nonce);
             if (delete) print("\r");
-            print(getNonceString());
+            print(getNonceString(nonce, hash));
             delete = true;
         }
         status = Status.MINED;
@@ -75,22 +77,64 @@ public class Block {
     }
 
     public void mineAsync(int difficulty) {
+        status = Status.MINING;
+        String target = new String(new char[difficulty]).replace('\0', '0');
+        startTime = System.currentTimeMillis();
         new Thread(() -> {
-            status = Status.MINING;
-            String target = new String(new char[difficulty]).replace('\0', '0');
             while (!hash.substring(0, difficulty).equals(target)) {
                 nonce++;
-                hash = calculateHash();
-                miningString = getNonceString();
+                hash = calculateHash(nonce);
+                miningString = getNonceString(nonce, hash);
             }
-            StringUtils.backspace(getNonceString().length());
-            miningString = StringUtils.color("&gNonce: " + nonce + "; " + hash);
+            miningString = " &gComplete  &w| &g" + hash + " &w| &g" + nonce;
             status = Status.MINED;
         }).start();
     }
 
-    private String getNonceString() {
-        return StringUtils.color("&yNonce: " + nonce + "; " + hash);
+    public void mineMultiAsync(int difficulty) {
+        status = Status.MINING;
+        String target = new String(new char[difficulty]).replace('\0', '0');
+        startTime = System.currentTimeMillis();
+        new Thread(() -> {
+            int localNonce = 0;
+            String localHash;
+            while (status == Status.MINING) {
+                localNonce += 2;
+                localHash = calculateHash(localNonce);
+                miningString = getNonceString(localNonce, localHash);
+                if (localHash.substring(0, difficulty).equals(target)) {
+                    finish(localHash, localNonce);
+                    break;
+                }
+            }
+        }).start();
+
+        new Thread(() -> {
+            int localNonce = 1;
+            String localHash;
+            while (status == Status.MINING) {
+                localNonce += 2;
+                localHash = calculateHash(localNonce);
+                miningString = getNonceString(localNonce, localHash);
+                if (localHash.substring(0, difficulty).equals(target)) {
+                    finish(localHash, localNonce);
+                    break;
+                }
+            }
+        }).start();
+    }
+
+    private void finish(String hash, int nonce) {
+        this.hash = hash;
+        this.nonce = nonce;
+        status = Status.MINED;
+        miningString = " &gComplete  &w| &g" + hash + " &w| &g" + nonce;
+    }
+
+    private String getNonceString(int nonce, String hash) {
+        float time = (System.currentTimeMillis() - startTime) / 1000f;
+        String space = " ".repeat(Math.max(10 - String.valueOf(nonce).length(), 1));
+        return " &yMining... &w| &y" + hash + " &w| &y" + nonce + space + "&w| &p" + time + "s";
     }
 
     public Status getStatus() {

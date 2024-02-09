@@ -23,22 +23,28 @@ public class Blockchain {
     }
 
     public String getProgressString() {
-        return null;
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 1; i < blockchain.size(); i++) {
+            String blockString = blockchain.get(i).getMiningString();
+            stringBuilder.append("&cBlock ").append(i).append(" &w| ").append(blockString).append("\n");
+        }
+        return stringBuilder.toString();
     }
 
     public void mineBlocks(int difficulty) {
         for (Block b : blockchain)
-            b.mineAsync(difficulty);
+            b.mineMultiAsync(difficulty);
 
         while (!allMined()) {
-            System.out.print("Waiting...\r");
+            System.out.print(StringUtils.color(getProgressString()));
+            StringUtils.moveCursorUp(blockchain.size() - 1);
         }
 
         for (int i = 0; i < blockchain.size() - 1; i++) {
             blockchain.get(i + 1).setPreviousHash(blockchain.get(i).simpleHash());
         }
 
-        System.out.println("Done.      ");
+        System.out.print(StringUtils.color(getProgressString()) + "\n");
     }
 
     private void printlnf(String s) {
@@ -73,8 +79,8 @@ public class Blockchain {
             currentBlock = blockchain.get(i);
             previousBlock = blockchain.get(i - 1);
 
-            if (!currentBlock.hash().equals(currentBlock.calculateHash())) {
-                printlnf("&rBlock " + i + " | Cached hash (" + currentBlock.hash() + ") does not match calculated hash (" + currentBlock.calculateHash() + ") (nonce: " + currentBlock.getNonce() + ")");
+            if (!currentBlock.hash().equals(currentBlock.calculateHash(currentBlock.getNonce()))) {
+                printlnf("&rBlock " + i + " | Cached hash (" + currentBlock.hash() + ") does not match calculated hash (" + currentBlock.calculateHash(currentBlock.getNonce()) + ") (nonce: " + currentBlock.getNonce() + ")");
                 pass = false;
             }
 

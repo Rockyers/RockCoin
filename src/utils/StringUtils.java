@@ -64,6 +64,14 @@ public class StringUtils {
         System.out.print("\b".repeat(Math.max(1, amount)));
     }
 
+    public static void moveCursorUp(int amount) {
+        System.out.print("\033[" + amount + "A");
+    }
+
+    public static void moveCursorUp() {
+        moveCursorUp(1);
+    }
+
     public static void hideCursor() {
         System.out.print("\u001B[?25l");
     }
